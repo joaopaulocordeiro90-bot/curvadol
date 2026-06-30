@@ -190,7 +190,7 @@ const FEED=[...PAIRS.filter(p=>p.api).map(p=>p.api), ...DXY_EXTRA].join(",");
 // O pré (perna BRL) atualiza sozinho todo dia; recalibrar o cupom periodicamente vs terminal.
 const CUPOM_CAL={"DOLN26":5.695,"DOLQ26":5.695,"DOLU26":5.051,"DOLV26":4.981,"DOLX26":5.08,"DOLZ26":4.983,"DOLF27":4.847,"DOLG27":4.9,"DOLH27":4.829,"DOLJ27":4.853,"DOLK27":4.831,"DOLM27":4.882};
 const CUPOM_CAL_DATE="30 Jun 26";
-const BUILD="b6 · 30Jun";   // selo de versao: confirma na tela qual build esta no ar
+const BUILD="b7 · 30Jun";   // selo de versao: confirma na tela qual build esta no ar
 // Offset de spot: AwesomeAPI roda ~0,28% rica vs BBG REGN. mid_Awe × SPOT_ADJ ≈ mid REGN.
 // Calib 30 Jun 26: Awe mid 5.1943 -> REGN mid 5.1799. Recalibrar junto com o cupom.
 // (Pra ancorar no comercial 5.1820 em vez de REGN: SPOT_ADJ=0.99763.)
@@ -465,7 +465,7 @@ async function fetchSpot(){
   setTimeout(fetchSpot, spotDelay);
 }
 // Resto dos pares a ~20s (mexem pouco): par faltando degrada so aquele tile, com backoff leve.
-const REST_BASE=API_KEY?60000:120000, REST_MAX=300000; let restDelay=REST_BASE;
+const REST_BASE=API_KEY?60000:60000, REST_MAX=300000; let restDelay=REST_BASE;
 async function fetchRest(){
   let ok=false;
   try{
