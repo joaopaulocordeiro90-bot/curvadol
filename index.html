@@ -39,6 +39,8 @@ body{background:
 .brand b{color:var(--amber);font-weight:700}
 .brand span{font-weight:400;letter-spacing:.24em;color:var(--dim);font-size:10.5px;
   margin-left:13px;text-transform:uppercase}
+.brand .delay{font-weight:400;letter-spacing:.05em;color:var(--faint);font-size:10px;
+  margin-left:8px;text-transform:none}
 .meta{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.06em;white-space:nowrap}
 .meta b{color:var(--ink);font-weight:500}
 .live::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;
@@ -130,7 +132,7 @@ table.dol td.pre{color:var(--pre)} table.dol td.cup{color:var(--cup)}
 <body>
 
 <div class="topbar">
-  <div class="brand">BRL <b>DESK</b> <span>fx · rates · curve</span></div>
+  <div class="brand">BRL <b>DESK</b> <span>fx · rates · curve</span><span class="delay">· delayed up to 5 min</span></div>
   <div class="meta">as of <b id="dataDate">—</b> · <span class="live" id="liveDot"></span><b id="clock">—</b><b id="feed"></b></div>
 </div>
 
@@ -188,7 +190,7 @@ const FEED=[...PAIRS.filter(p=>p.api).map(p=>p.api), ...DXY_EXTRA].join(",");
 // O pré (perna BRL) atualiza sozinho todo dia; recalibrar o cupom periodicamente vs terminal.
 const CUPOM_CAL={"DOLN26":5.695,"DOLQ26":5.695,"DOLU26":5.051,"DOLV26":4.981,"DOLX26":5.08,"DOLZ26":4.983,"DOLF27":4.847,"DOLG27":4.9,"DOLH27":4.829,"DOLJ27":4.853,"DOLK27":4.831,"DOLM27":4.882};
 const CUPOM_CAL_DATE="30 Jun 26";
-const BUILD="b3 · 30Jun";   // selo de versao: confirma na tela qual build esta no ar
+const BUILD="b4 · 30Jun";   // selo de versao: confirma na tela qual build esta no ar
 // Offset de spot: AwesomeAPI roda ~0,28% rica vs BBG REGN. mid_Awe × SPOT_ADJ ≈ mid REGN.
 // Calib 30 Jun 26: Awe mid 5.1943 -> REGN mid 5.1799. Recalibrar junto com o cupom.
 // (Pra ancorar no comercial 5.1820 em vez de REGN: SPOT_ADJ=0.99763.)
