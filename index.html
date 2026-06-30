@@ -190,13 +190,17 @@ const FEED=[...PAIRS.filter(p=>p.api).map(p=>p.api), ...DXY_EXTRA].join(",");
 // O pré (perna BRL) atualiza sozinho todo dia; recalibrar o cupom periodicamente vs terminal.
 const CUPOM_CAL={"DOLN26":5.695,"DOLQ26":5.695,"DOLU26":5.051,"DOLV26":4.981,"DOLX26":5.08,"DOLZ26":4.983,"DOLF27":4.847,"DOLG27":4.9,"DOLH27":4.829,"DOLJ27":4.853,"DOLK27":4.831,"DOLM27":4.882};
 const CUPOM_CAL_DATE="30 Jun 26";
-const BUILD="b5 · 30Jun";   // selo de versao: confirma na tela qual build esta no ar
+const BUILD="b6 · 30Jun";   // selo de versao: confirma na tela qual build esta no ar
 // Offset de spot: AwesomeAPI roda ~0,28% rica vs BBG REGN. mid_Awe × SPOT_ADJ ≈ mid REGN.
 // Calib 30 Jun 26: Awe mid 5.1943 -> REGN mid 5.1799. Recalibrar junto com o cupom.
 // (Pra ancorar no comercial 5.1820 em vez de REGN: SPOT_ADJ=0.99763.)
 const SPOT_ADJ=0.99723;
 const SPOT_ADJ_DATE="30 Jun 26";
-const FX_STALE_MS=20000;   // sem fetch de FX ok ha >20s -> spot STALE (mata o feed congelado)
+// API key opcional da AwesomeAPI. SEM chave: o dado e cacheado 60s (puxar mais rapido nao
+// traz nada novo e queima cota -> foi o que causou o 429). COM chave: tempo real + 100k req/dia.
+// Pegar gratis em awesomeapi.com.br, colar abaixo e confirmar o parametro na doc da chave.
+const API_KEY="";
+const FX_STALE_MS=(API_KEY?50:150)*1000;   // sem fetch ok por mais que isso -> SPOT STALE
 let DATA={}, FX={}, SPOT=null, fxBuilt=false, tableBuilt=false, CHART=null;
 let fxLastOk=0, fxStale=true;   // comeca stale ate o 1o tick ao vivo
 
@@ -430,8 +434,10 @@ async function loadData(){
     update();
   }catch(e){}
 }
+// API key vem do topo (const API_KEY). Sem chave -> cache de 60s; com chave -> token na query.
 async function pullFX(pairs){
-  const r=await fetch(`https://economia.awesomeapi.com.br/json/last/${pairs}`,{cache:"no-store"});
+  const tk = API_KEY ? "?token="+encodeURIComponent(API_KEY) : "";
+  const r=await fetch(`https://economia.awesomeapi.com.br/json/last/${pairs}${tk}`,{cache:"no-store"});
   if(!r.ok) throw new Error("http "+r.status);
   return r.json();
 }
@@ -442,7 +448,9 @@ function storeQuote(k,v){
 // SPOT isolado (roda a 1s): o USD/BRL nunca depende de um par EM que saiu do ar
 // SPOT a ~5s com backoff: em falha (rate-limit/outage) dobra o intervalo ate 60s,
 // pra nao martelar a API bloqueada e deixar o bloqueio expirar. Volta a 5s ao primeiro sucesso.
-let spotDelay=5000; const SPOT_BASE=5000, SPOT_MAX=60000;
+// Sem chave: 60s (= o cache da API; mais rapido nao atualiza e so queima cota).
+// Com chave: 15s (tempo real, dentro do orcamento de 100k/dia).
+const SPOT_BASE=API_KEY?15000:60000, SPOT_MAX=120000; let spotDelay=SPOT_BASE;
 async function fetchSpot(){
   let ok=false;
   try{
@@ -457,7 +465,7 @@ async function fetchSpot(){
   setTimeout(fetchSpot, spotDelay);
 }
 // Resto dos pares a ~20s (mexem pouco): par faltando degrada so aquele tile, com backoff leve.
-let restDelay=20000; const REST_BASE=20000, REST_MAX=120000;
+const REST_BASE=API_KEY?60000:120000, REST_MAX=300000; let restDelay=REST_BASE;
 async function fetchRest(){
   let ok=false;
   try{
