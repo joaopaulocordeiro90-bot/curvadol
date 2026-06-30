@@ -58,7 +58,7 @@ def vencimentos_dol(ref, n=12):
 
 # ===================== FX (AwesomeAPI) =====================
 def get_fx():
-    pares = "USD-BRL,EUR-BRL,GBP-BRL,USD-MXN,USD-CLP,USD-ZAR,USD-CNY,USD-JPY"
+    pares = "USD-BRL,EUR-BRL,GBP-BRL,EUR-USD,GBP-USD,USD-JPY,USD-MXN,USD-CLP,USD-ZAR,USD-CNY,USD-CAD,USD-SEK,USD-CHF"
     r = requests.get(f"https://economia.awesomeapi.com.br/json/last/{pares}",
                      headers=UA, timeout=30)
     r.raise_for_status()
@@ -93,18 +93,25 @@ def get_rates():
 def get_focus(year):
     base=("https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/"
           "ExpectativasMercadoAnuais")
-    out={}
-    alvo=[("Selic","selic"),("IPCA","ipca"),("Câmbio","cambio"),("PIB Total","pib")]
+    out={"ano":year}
+    alvo=[("IPCA","ipca"),("Selic","selic"),("Câmbio","cambio"),("PIB Total","pib")]
+    def busca(filtro):
+        p={"$top":"1","$format":"json","$orderby":"Data desc",
+           "$select":"Indicador,Data,DataReferencia,Mediana","$filter":filtro}
+        r=requests.get(base,params=p,headers=UA,timeout=30,verify=False); r.raise_for_status()
+        return r.json().get("value",[])
     for ind,key in alvo:
         try:
-            params={"$top":"1","$format":"json","$orderby":"Data desc",
-                    "$filter":f"Indicador eq '{ind}' and DataReferencia eq '{year}'"}
-            r=requests.get(base, params=params, headers=UA, timeout=30); r.raise_for_status()
-            vals=r.json().get("value",[])
-            if vals: out[key]={"mediana":vals[0].get("Mediana"),"data":vals[0].get("Data")}
+            vals=busca(f"Indicador eq '{ind}' and DataReferencia eq '{year}'")
+            if not vals:  # fallback: pega a expectativa mais recente, sem travar o ano
+                vals=busca(f"Indicador eq '{ind}'")
+            if vals:
+                out[key]={"mediana":vals[0].get("Mediana"),"data":vals[0].get("Data"),
+                          "ref":vals[0].get("DataReferencia")}
+            else:
+                out[key]={"erro":"sem dados"}; print(f"  focus {ind}: vazio")
         except Exception as e:
-            out[key]={"erro":str(e)}
-    out["ano"]=year
+            out[key]={"erro":str(e)}; print(f"  focus {ind}: {e}")
     return out
 
 # ===================== PRE (ANBIMA) =====================

@@ -11,7 +11,7 @@
 :root{
   --bg:#081210; --panel:#0c1a16; --panel2:#0a1612; --line:rgba(124,168,154,.14);
   --ink:#d2e6dc; --dim:#728d83; --faint:#47615a;
-  --amber:#e7b250; --up:#46d09a; --down:#e8745a; --pre:#5fa0db; --cup:#d98a5b;
+  --amber:#e7b250; --up:#46d09a; --down:#e8745a; --pre:#5fa0db; --cup:#d98a5b; --dxy:#8fc0e8;
   --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
   --sans:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
 }
@@ -25,7 +25,13 @@ body{background:
 .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--dim)}
 
-/* ---------- topbar ---------- */
+@keyframes flup{0%{background-color:rgba(70,208,154,.32)}100%{background-color:transparent}}
+@keyframes fldn{0%{background-color:rgba(232,116,90,.32)}100%{background-color:transparent}}
+.flash-up{animation:flup .75s ease-out}
+.flash-down{animation:fldn .75s ease-out}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 8px var(--up)}50%{opacity:.35;box-shadow:0 0 2px var(--up)}}
+
+/* topbar */
 .topbar{display:flex;align-items:baseline;justify-content:space-between;gap:16px;
   padding:16px 22px 14px;border-bottom:1px solid var(--line)}
 .brand{font-weight:700;letter-spacing:.14em;font-size:15px}
@@ -34,24 +40,31 @@ body{background:
 .meta{font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:.06em;white-space:nowrap}
 .meta b{color:var(--ink);font-weight:500}
 .live::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;
-  background:var(--up);margin-right:7px;vertical-align:middle;box-shadow:0 0 8px var(--up)}
+  background:var(--up);margin-right:7px;vertical-align:middle;animation:pulse 1.8s ease-in-out infinite}
 
-/* ---------- fx strip ---------- */
-.fxstrip{display:flex;gap:0;overflow-x:auto;border-bottom:1px solid var(--line);
-  scrollbar-width:none}
+/* fx strip */
+.fxstrip{display:flex;gap:0;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:none}
 .fxstrip::-webkit-scrollbar{display:none}
-.fxtile{flex:0 0 auto;min-width:132px;padding:11px 18px;border-right:1px solid var(--line);
-  display:flex;flex-direction:column;gap:3px}
-.fxtile.hero{min-width:184px;background:linear-gradient(180deg,rgba(231,178,80,.06),transparent)}
+.fxtile{position:relative;flex:0 0 auto;min-width:128px;padding:11px 18px;
+  border-right:1px solid var(--line);display:flex;flex-direction:column;gap:3px;cursor:default}
+.fxtile.hero{min-width:178px;background:linear-gradient(180deg,rgba(231,178,80,.07),transparent)}
+.fxtile.dxy{background:linear-gradient(180deg,rgba(95,160,219,.09),transparent)}
 .fxtile .pair{font-size:10.5px;letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
 .fxtile .px{font-family:var(--mono);font-size:19px;font-weight:500;line-height:1.1}
 .fxtile.hero .px{font-size:26px;color:var(--amber)}
+.fxtile.dxy .px{color:var(--dxy)}
 .fxtile .chg{font-family:var(--mono);font-size:11.5px;font-weight:500}
-.sep{flex:0 0 auto;width:1px;background:var(--line);margin:0}
+.sep{flex:0 0 auto;width:1px;background:var(--line)}
 .grouplabel{flex:0 0 auto;align-self:center;writing-mode:vertical-rl;transform:rotate(180deg);
-  font-size:9px;letter-spacing:.2em;color:var(--faint);text-transform:uppercase;padding:0 4px}
+  font-size:8.5px;letter-spacing:.22em;color:var(--faint);text-transform:uppercase;padding:0 5px}
+.tip{position:absolute;top:calc(100% + 4px);left:8px;z-index:40;min-width:158px;
+  background:#0b1a15;border:1px solid var(--line);border-radius:8px;padding:8px 11px;
+  box-shadow:0 14px 34px rgba(0,0,0,.55);display:none;font-family:var(--mono);font-size:11px}
+.fxtile:hover .tip{display:block}
+.tip div{display:flex;justify-content:space-between;gap:16px;padding:2.5px 0}
+.tip span{color:var(--dim)} .tip b{font-weight:500;color:var(--ink)}
 
-/* ---------- grid ---------- */
+/* grid */
 .grid{display:grid;grid-template-columns:1.65fr 1fr;gap:14px;padding:14px;align-items:start}
 .panel{background:linear-gradient(180deg,var(--panel),var(--panel2));
   border:1px solid var(--line);border-radius:10px;overflow:hidden}
@@ -61,24 +74,25 @@ body{background:
 .panel>header .sub{font-family:var(--mono);font-size:10.5px;color:var(--dim);letter-spacing:.08em}
 .side{display:flex;flex-direction:column;gap:14px}
 
-/* ---------- chart ---------- */
+/* chart */
 .chartwrap{padding:10px 12px 2px}
 #chart{width:100%;height:230px;display:block}
 .legend{display:flex;gap:16px;flex-wrap:wrap;padding:6px 16px 12px;
   font-size:10.5px;color:var(--dim);letter-spacing:.04em}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle}
 
-/* ---------- dol table ---------- */
+/* dol table */
 table.dol{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
 table.dol th{font-family:var(--sans);font-size:9.5px;letter-spacing:.12em;color:var(--faint);
   text-transform:uppercase;font-weight:600;text-align:right;padding:8px 16px 7px}
 table.dol th:first-child,table.dol td:first-child{text-align:left}
 table.dol td{padding:6px 16px;text-align:right;border-top:1px solid rgba(124,168,154,.07)}
-table.dol td.code{color:var(--dim)} table.dol td.dol{color:var(--ink);font-weight:600}
+table.dol td.code{color:var(--dim)}
+table.dol td.dol{color:var(--ink);font-weight:600;font-size:13px}
 table.dol td.pre{color:var(--pre)} table.dol td.cup{color:var(--cup)}
 table.dol tr.interp td.cup::after{content:" △";color:var(--faint);font-size:9px}
 
-/* ---------- stat lists ---------- */
+/* stat lists */
 .stats{padding:6px 4px}
 .stat{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
   padding:10px 16px;border-top:1px solid rgba(124,168,154,.07)}
@@ -92,7 +106,6 @@ table.dol tr.interp td.cup::after{content:" △";color:var(--faint);font-size:9p
 .focusgrid .stat:nth-child(-n+2){border-top:none}
 .focusgrid .stat:nth-child(odd){border-right:1px solid rgba(124,168,154,.07)}
 
-/* ---------- footer ---------- */
 .foot{padding:14px 22px 22px;color:var(--faint);font-family:var(--mono);font-size:10.5px;
   letter-spacing:.05em;border-top:1px solid var(--line);margin-top:6px;line-height:1.7}
 .foot b{color:var(--dim);font-weight:500}
@@ -118,13 +131,12 @@ table.dol tr.interp td.cup::after{content:" △";color:var(--faint);font-size:9p
     <header><span class="ttl">Curva DOL</span><span class="sub" id="curveSub">forward USD/BRL · CIP</span></header>
     <div class="chartwrap"><svg id="chart" viewBox="0 0 760 230" preserveAspectRatio="none"></svg></div>
     <div class="legend">
-      <span><i style="background:var(--amber)"></i>casado (spot)</span>
       <span><i style="background:var(--up)"></i>DOL forward</span>
       <span><i style="background:var(--pre)"></i>perna pré</span>
       <span><i style="background:var(--cup)"></i>perna cupom</span>
     </div>
     <table class="dol" id="dolTable">
-      <thead><tr><th>cód</th><th>venc</th><th>du</th><th>pré%</th><th>cup%</th><th>DOL</th><th>pts</th></tr></thead>
+      <thead><tr><th>cód</th><th>DOL</th><th>venc</th><th>du</th><th>pré%</th><th>cup%</th><th>pts</th></tr></thead>
       <tbody></tbody>
     </table>
   </div>
@@ -145,92 +157,141 @@ table.dol tr.interp td.cup::after{content:" △";color:var(--faint);font-size:9p
 
 <script>
 const $=id=>document.getElementById(id);
+const GRP={dolar:"USD",brl:"BRL",major:"majors",em:"EM"};
 const PAIRS=[
-  {k:"USDBRL",api:"USD-BRL",lab:"USD/BRL",hero:true,grp:"brl"},
-  {k:"EURBRL",api:"EUR-BRL",lab:"EUR/BRL",grp:"brl"},
-  {k:"GBPBRL",api:"GBP-BRL",lab:"GBP/BRL",grp:"brl"},
-  {k:"USDMXN",api:"USD-MXN",lab:"USD/MXN",grp:"peer"},
-  {k:"USDCLP",api:"USD-CLP",lab:"USD/CLP",grp:"peer"},
-  {k:"USDZAR",api:"USD-ZAR",lab:"USD/ZAR",grp:"peer"},
-  {k:"USDCNY",api:"USD-CNY",lab:"USD/CNY",grp:"peer"},
-  {k:"USDJPY",api:"USD-JPY",lab:"USD/JPY",grp:"peer"},
+  {k:"DXY",   lab:"DXY",     grp:"dolar", calc:true},
+  {k:"USDBRL",api:"USD-BRL", lab:"USD/BRL",hero:true, grp:"brl"},
+  {k:"EURBRL",api:"EUR-BRL", lab:"EUR/BRL", grp:"brl"},
+  {k:"GBPBRL",api:"GBP-BRL", lab:"GBP/BRL", grp:"brl"},
+  {k:"EURUSD",api:"EUR-USD", lab:"EUR/USD", grp:"major"},
+  {k:"GBPUSD",api:"GBP-USD", lab:"GBP/USD", grp:"major"},
+  {k:"USDJPY",api:"USD-JPY", lab:"USD/JPY", grp:"major"},
+  {k:"USDMXN",api:"USD-MXN", lab:"USD/MXN", grp:"em"},
+  {k:"USDCLP",api:"USD-CLP", lab:"USD/CLP", grp:"em"},
+  {k:"USDZAR",api:"USD-ZAR", lab:"USD/ZAR", grp:"em"},
+  {k:"USDCNY",api:"USD-CNY", lab:"USD/CNY", grp:"em"},
 ];
-const FEED=PAIRS.map(p=>p.api).join(",");
-let DATA={}, FX={}, SPOT=null;
+// componentes ocultos só para calcular o DXY (fórmula ICE)
+const DXY_EXTRA=["USD-CAD","USD-SEK","USD-CHF"];
+const FEED=[...PAIRS.filter(p=>p.api).map(p=>p.api), ...DXY_EXTRA].join(",");
+let DATA={}, FX={}, SPOT=null, fxBuilt=false, tableBuilt=false;
 
 /* ---------- formatação ---------- */
 const nf=(x,d=4)=>x==null||isNaN(x)?"—":Number(x).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
 const pf=(x,d=2)=>x==null||isNaN(x)?"—":(x>=0?"+":"")+Number(x).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d})+"%";
 const cls=x=>x>0.0001?"up":x<-0.0001?"down":"flat";
 const arrow=x=>x>0.0001?"▲":x<-0.0001?"▼":"·";
-function decFor(v){ if(v==null)return 4; const a=Math.abs(v); return a>=1000?1:a>=100?2:a>=10?3:4; }
+const decFor=v=>{if(v==null)return 4;const a=Math.abs(v);return a>=1000?1:a>=100?2:a>=10?3:4;};
+function flash(el,dir){ if(!el)return; el.classList.remove("flash-up","flash-down");
+  void el.offsetWidth; el.classList.add(dir>0?"flash-up":"flash-down"); }
+
+/* ---------- DXY ao vivo (fórmula ICE) ---------- */
+function computeDXY(){
+  const g=k=>FX[k]&&FX[k].bid;
+  const e=g("EURUSD"),j=g("USDJPY"),gb=g("GBPUSD"),c=g("USDCAD"),s=g("USDSEK"),ch=g("USDCHF");
+  if(![e,j,gb,c,s,ch].every(Boolean)) return null;
+  const f=(E,J,G,C,S,H)=>50.14348112*Math.pow(E,-0.576)*Math.pow(J,0.136)*Math.pow(G,-0.119)
+        *Math.pow(C,0.091)*Math.pow(S,0.042)*Math.pow(H,0.036);
+  const now=f(e,j,gb,c,s,ch);
+  const pv=k=>{const o=FX[k];return o.bid/(1+(o.pct||0)/100);};
+  const prev=f(pv("EURUSD"),pv("USDJPY"),pv("GBPUSD"),pv("USDCAD"),pv("USDSEK"),pv("USDCHF"));
+  return {bid:now, pct:(now/prev-1)*100};
+}
 
 /* ---------- FX strip ---------- */
-function renderFX(){
-  const el=$("fxstrip"); el.innerHTML="";
-  let lastGrp=null;
+function buildFX(){
+  const strip=$("fxstrip"); strip.innerHTML="";
+  let last=null;
   PAIRS.forEach(p=>{
-    const q=FX[p.k]; if(!q) return;
-    if(p.grp!=="brl" && lastGrp==="brl"){
-      const s=document.createElement("div"); s.className="sep"; el.appendChild(s);
-      const g=document.createElement("div"); g.className="grouplabel"; g.textContent="USD vs"; el.appendChild(g);
+    if(p.grp!==last){
+      if(last!==null){const s=document.createElement("div");s.className="sep";strip.appendChild(s);}
+      const g=document.createElement("div");g.className="grouplabel";g.textContent=GRP[p.grp];strip.appendChild(g);
     }
-    lastGrp=p.grp;
-    const d=document.createElement("div"); d.className="fxtile"+(p.hero?" hero":"");
-    d.innerHTML=`<div class="pair">${p.lab}</div>
-      <div class="px">${nf(q.bid,decFor(q.bid))}</div>
-      <div class="chg ${cls(q.pct)}">${arrow(q.pct)} ${pf(q.pct)}</div>`;
-    el.appendChild(d);
+    last=p.grp;
+    const d=document.createElement("div");
+    d.className="fxtile"+(p.hero?" hero":"")+(p.k==="DXY"?" dxy":"");
+    d.dataset.k=p.k;
+    d.innerHTML=`<div class="pair">${p.lab}</div><div class="px">—</div>
+      <div class="chg flat">·</div><div class="tip"></div>`;
+    strip.appendChild(d);
+  });
+  fxBuilt=true;
+}
+function updateFX(){
+  if(!fxBuilt) buildFX();
+  const dxy=computeDXY(); if(dxy) FX.DXY=dxy;
+  PAIRS.forEach(p=>{
+    const q=FX[p.k];
+    const tile=$("fxstrip").querySelector(`.fxtile[data-k="${p.k}"]`); if(!tile) return;
+    if(!q){ tile.style.display="none"; return; }
+    tile.style.display="";
+    const dec=p.k==="DXY"?3:decFor(q.bid);
+    const px=tile.querySelector(".px"), chg=tile.querySelector(".chg");
+    const prev=tile._bid;
+    px.textContent=nf(q.bid,dec);
+    chg.textContent=`${arrow(q.pct)} ${pf(q.pct)}`; chg.className="chg "+cls(q.pct);
+    if(prev!=null && q.bid!==prev) flash(tile, q.bid-prev);
+    tile._bid=q.bid;
+    const rows=[];
+    if(q.ask!=null){ rows.push(["compra",nf(q.bid,dec)],["venda",nf(q.ask,dec)]); }
+    if(q.high!=null) rows.push(["máx dia",nf(q.high,dec)]);
+    if(q.low!=null)  rows.push(["mín dia",nf(q.low,dec)]);
+    rows.push(["var dia",pf(q.pct)]);
+    if(q.name) rows.push(["par",q.name.replace("/Real Brasileiro","").replace("Dólar Americano","USD")]);
+    tile.querySelector(".tip").innerHTML=rows.map(([k,v])=>`<div><span>${k}</span><b>${v}</b></div>`).join("");
   });
 }
 
 /* ---------- curva DOL ---------- */
 function svensson(tau,p){
-  const e=Math.exp, l1=p.l1,l2=p.l2;
-  const t1=(1-e(-l1*tau))/(l1*tau), t2=t1-e(-l1*tau);
+  const e=Math.exp,l1=p.l1,l2=p.l2;
+  const t1=(1-e(-l1*tau))/(l1*tau),t2=t1-e(-l1*tau);
   const t3=(1-e(-l2*tau))/(l2*tau)-e(-l2*tau);
   return p.b1+p.b2*t1+p.b3*t2+p.b4*t3;
 }
 function computeCurve(){
-  const vs=DATA.vencimentos, pre=DATA.pre, cup=(DATA.cupom&&DATA.cupom.byCode)||{};
-  if(!vs||!pre||pre.b1==null||SPOT==null){ return null; }
+  const vs=DATA.vencimentos,pre=DATA.pre,cup=(DATA.cupom&&DATA.cupom.byCode)||{};
+  if(!vs||!pre||pre.b1==null||SPOT==null) return null;
   return vs.map(v=>{
-    const tau=v.du/252;
-    const pr=svensson(tau,pre);                 // pré decimal
-    const cp=(cup[v.code]!=null?cup[v.code]:0)/100;  // cupom decimal
+    const tau=v.du/252, pr=svensson(tau,pre);
+    const cv=cup[v.code]!=null?cup[v.code]:null, cp=(cv||0)/100;
     const dol=SPOT*Math.pow(1+pr,tau)/(1+cp*v.dc/360);
-    return {...v, pre:pr*100, cup:(cup[v.code]!=null?cup[v.code]:null), dol, pts:dol*1000,
-            interp:false};
+    return {...v,pre:pr*100,cup:cv,dol,pts:dol*1000};
   });
 }
-function renderTable(rows){
+function buildTable(){
   const tb=$("dolTable").querySelector("tbody"); tb.innerHTML="";
-  rows.forEach(r=>{
-    const tr=document.createElement("tr");
-    const vd=r.venc.split("-").reverse().join("/");
-    tr.innerHTML=`<td class="code">${r.code}</td><td>${vd}</td><td>${r.du}</td>
-      <td class="pre">${r.pre.toFixed(3)}</td>
-      <td class="cup">${r.cup!=null?r.cup.toFixed(3):"—"}</td>
-      <td class="dol">${nf(r.dol,4)}</td><td>${r.pts.toFixed(1)}</td>`;
+  (DATA.vencimentos||[]).forEach(v=>{
+    const tr=document.createElement("tr"); tr.dataset.code=v.code;
+    const vd=v.venc.split("-").reverse().join("/");
+    tr.innerHTML=`<td class="code">${v.code}</td><td class="dol">—</td><td>${vd}</td>
+      <td>${v.du}</td><td class="pre">—</td><td class="cup">—</td><td class="pts">—</td>`;
     tb.appendChild(tr);
+  });
+  tableBuilt=true;
+}
+function updateTable(rows){
+  if(!tableBuilt) buildTable();
+  rows.forEach(r=>{
+    const tr=$("dolTable").querySelector(`tr[data-code="${r.code}"]`); if(!tr) return;
+    const dc=tr.querySelector(".dol"), prev=tr._dol;
+    dc.textContent=nf(r.dol,4);
+    tr.querySelector(".pre").textContent=r.pre.toFixed(3);
+    tr.querySelector(".cup").textContent=r.cup!=null?r.cup.toFixed(3):"—";
+    tr.querySelector(".pts").textContent=r.pts.toFixed(1);
+    if(prev!=null && Math.abs(r.dol-prev)>1e-5) flash(dc, r.dol-prev);
+    tr._dol=r.dol;
   });
 }
 function renderChart(rows){
-  const W=760,H=230,padL=8,padR=8,padT=14,padB=20;
+  const W=760,H=230,padL=8,padR=8,padT=16,padB=20;
   const svg=$("chart"); svg.innerHTML="";
   const ns="http://www.w3.org/2000/svg";
-  const ys=rows.map(r=>r.dol).concat([SPOT]);
-  let lo=Math.min(...ys), hi=Math.max(...ys); const m=(hi-lo)*0.12||0.1; lo-=m; hi+=m;
+  const ys=rows.map(r=>r.dol);
+  let lo=Math.min(...ys),hi=Math.max(...ys);const m=(hi-lo)*0.15||0.1;lo-=m;hi+=m;
   const x=i=>padL+(W-padL-padR)*i/(rows.length-1);
   const y=v=>padT+(H-padT-padB)*(1-(v-lo)/(hi-lo));
   const mk=(t,a)=>{const e=document.createElementNS(ns,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
-  // casado dashed
-  const yc=y(SPOT);
-  svg.appendChild(mk("line",{x1:padL,y1:yc,x2:W-padR,y2:yc,stroke:"var(--amber)",
-    "stroke-width":1,"stroke-dasharray":"4 4","opacity":.7}));
-  svg.appendChild(mk("text",{x:W-padR,y:yc-5,fill:"var(--amber)","font-size":10,
-    "text-anchor":"end","font-family":"var(--mono)"})).textContent="casado "+nf(SPOT,4);
-  // area + line
   let dl=`M ${x(0)} ${y(rows[0].dol)}`, da=`M ${x(0)} ${y(rows[0].dol)}`;
   rows.forEach((r,i)=>{ if(i){dl+=` L ${x(i)} ${y(r.dol)}`; da+=` L ${x(i)} ${y(r.dol)}`;} });
   da+=` L ${x(rows.length-1)} ${H-padB} L ${x(0)} ${H-padB} Z`;
@@ -240,34 +301,31 @@ function renderChart(rows){
   svg.appendChild(grad);
   svg.appendChild(mk("path",{d:da,fill:"url(#g1)"}));
   svg.appendChild(mk("path",{d:dl,fill:"none",stroke:"var(--up)","stroke-width":1.8}));
-  rows.forEach((r,i)=>{ svg.appendChild(mk("circle",{cx:x(i),cy:y(r.dol),r:2.4,fill:"var(--up)"})); });
-  // x labels (cada 2)
+  rows.forEach((r,i)=>svg.appendChild(mk("circle",{cx:x(i),cy:y(r.dol),r:2.4,fill:"var(--up)"})));
   rows.forEach((r,i)=>{ if(i%2===0){ const t=mk("text",{x:x(i),y:H-6,fill:"var(--faint)",
     "font-size":9,"text-anchor":"middle","font-family":"var(--mono)"});
     t.textContent=r.code.slice(3); svg.appendChild(t);} });
 }
 
-/* ---------- carry & juros ---------- */
-function statRow(k,sub,v,unit,colorVal){
+/* ---------- carry & focus ---------- */
+function statRow(k,sub,v,unit,color){
   return `<div class="stat"><div class="k">${k}${sub?`<small>${sub}</small>`:""}</div>
-    <div class="v ${colorVal||""}">${v}<small>${unit||""}</small></div></div>`;
+    <div class="v ${color||""}">${v}<small>${unit||""}</small></div></div>`;
 }
 function renderCarry(){
-  const r=DATA.rates||{}, el=$("carry"); let h="";
-  const g=(o)=> (o&&o.valor!=null)?o.valor:null;
-  const selic=g(r.selic), ipca=g(r.ipca12m), real=g(r.juroreal), ptax=g(r.ptax);
-  // DI 1 ano implícito (Svensson em ~252 du)
-  let di1=null; if(DATA.pre&&DATA.pre.b1!=null){ di1=svensson(1,DATA.pre)*100; }
+  const r=DATA.rates||{}, el=$("carry");
+  const g=o=>(o&&o.valor!=null)?o.valor:null;
+  const selic=g(r.selic),ipca=g(r.ipca12m),real=g(r.juroreal),ptax=g(r.ptax);
+  let di1=null; if(DATA.pre&&DATA.pre.b1!=null) di1=svensson(1,DATA.pre)*100;
+  let h="";
   h+=statRow("Selic meta","Copom · a.a.", selic!=null?selic.toLocaleString("pt-BR",{minimumFractionDigits:2}):"—","%");
   h+=statRow("DI 1 ano","curva ANBIMA · a.a.", di1!=null?di1.toFixed(2):"—","%");
   h+=statRow("IPCA","acum. 12m", ipca!=null?ipca.toLocaleString("pt-BR",{minimumFractionDigits:2}):"—","%");
   h+=statRow("Juro real","ex-post (Selic/IPCA)", real!=null?real.toLocaleString("pt-BR",{minimumFractionDigits:2}):"—","%", real!=null?cls(real):"");
   h+=statRow("PTAX","dólar venda · BCB", ptax!=null?nf(ptax,4):"—","");
   el.innerHTML=h;
-  if(r.selic&&r.selic.data) $("ratesDate").textContent="BCB · "+r.selic.data;
+  if(r.ptax&&r.ptax.data) $("ratesDate").textContent="BCB · "+r.ptax.data; else if(r.selic&&r.selic.data) $("ratesDate").textContent="BCB · "+r.selic.data;
 }
-
-/* ---------- focus ---------- */
 function renderFocus(){
   const f=DATA.focus||{}, el=$("focus");
   const fmt=(o,d=2)=>(o&&o.mediana!=null)?Number(o.mediana).toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d}):"—";
@@ -281,13 +339,13 @@ function renderFocus(){
 }
 
 /* ---------- render geral ---------- */
-function renderAll(){
-  renderFX();
+function update(){
+  updateFX();
   const rows=computeCurve();
-  if(rows){ renderChart(rows); renderTable(rows); }
+  if(rows){ updateTable(rows); renderChart(rows); }
   renderCarry(); renderFocus();
   $("dataDate").textContent=DATA.refdate||"—";
-  $("foot").innerHTML=`<b>fontes:</b> câmbio AwesomeAPI (ao vivo) · juros &amp; Focus Banco Central · pré ANBIMA · cupom B3`
+  $("foot").innerHTML=`<b>fontes:</b> câmbio AwesomeAPI (ao vivo · DXY calculado) · juros &amp; Focus Banco Central · pré ANBIMA · cupom B3`
     +` &nbsp;·&nbsp; <b>curva:</b> spot ao vivo × carrego (pré−cupom) recalculado no fechamento`
     +` &nbsp;·&nbsp; robô automático · dados de ${DATA.refdate||"—"}`;
 }
@@ -296,32 +354,33 @@ function renderAll(){
 async function loadData(){
   try{
     const r=await fetch("./curve.json?t="+Date.now(),{cache:"no-store"});
-    if(r.ok){ DATA=await r.json();
-      if(DATA.fx&&!Object.keys(FX).length){ // semente até o feed ao vivo chegar
-        for(const k in DATA.fx){ FX[k]={bid:DATA.fx[k].bid,pct:DATA.fx[k].pct}; }
-        if(FX.USDBRL) SPOT=FX.USDBRL.bid;
-      }
-      renderAll();
+    if(!r.ok) return;
+    DATA=await r.json();
+    if(DATA.fx&&!Object.keys(FX).length){
+      for(const k in DATA.fx) FX[k]={bid:DATA.fx[k].bid,ask:DATA.fx[k].ask,pct:DATA.fx[k].pct,name:DATA.fx[k].name};
+      if(FX.USDBRL) SPOT=FX.USDBRL.bid;
     }
+    update();
   }catch(e){}
 }
 async function fetchFX(){
   try{
     const r=await fetch(`https://economia.awesomeapi.com.br/json/last/${FEED}`,{cache:"no-store"});
     const d=await r.json();
-    for(const k in d){ FX[k]={bid:parseFloat(d[k].bid),pct:parseFloat(d[k].pctChange||0)}; }
+    for(const k in d){ const v=d[k];
+      FX[k]={bid:parseFloat(v.bid),ask:parseFloat(v.ask||v.bid),high:parseFloat(v.high),
+             low:parseFloat(v.low),pct:parseFloat(v.pctChange||0),name:v.name}; }
     if(FX.USDBRL) SPOT=FX.USDBRL.bid;
-    renderAll();
+    update();
   }catch(e){}
 }
 function tick(){ $("clock").textContent=new Date().toLocaleTimeString("pt-BR"); }
 
-/* ---------- boot ---------- */
 tick(); setInterval(tick,1000);
 loadData();
 fetchFX();
-setInterval(fetchFX,30000);
-setInterval(loadData,3600000);
+setInterval(fetchFX,15000);     // feed ao vivo (pisca quando há liquidez)
+setInterval(loadData,3600000);  // dados diários (juros/Focus/pré/cupom)
 </script>
 </body>
 </html>
