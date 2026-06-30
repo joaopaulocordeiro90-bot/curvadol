@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-29T22:00:00Z",
+  "updatedAt": "2026-06-30T02:47:21.164323Z",
   "refdate": "29/06/2026",
   "vencimentos": [
     {
@@ -83,12 +83,9 @@
     "l1": 0.9941,
     "l2": 0.4805,
     "date": "29/06/2026",
-    "status": "seed"
+    "status": "ok"
   },
   "cupom": {
-    "status": "seed",
-    "source": "BDI/SCS (semente inicial)",
-    "date": "29/06/2026",
     "vertices": [
       [
         35,
@@ -107,6 +104,8 @@
         5.342
       ]
     ],
+    "source": "B3 BDI / SCS (aproximacao)",
+    "status": "ok",
     "byCode": {
       "DOLN26": 6.006,
       "DOLQ26": 6.006,
@@ -120,6 +119,7 @@
       "DOLJ27": 5.342,
       "DOLK27": 5.342,
       "DOLM27": 5.342
-    }
+    },
+    "date": "29/06/2026"
   }
 }
