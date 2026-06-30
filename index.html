@@ -129,7 +129,7 @@ table.dol td.pre{color:var(--pre)} table.dol td.cup{color:var(--cup)}
 
 <div class="grid">
   <div class="panel">
-    <header><span class="ttl">USD/BRL Curve</span><span class="sub">forward · covered interest parity</span></header>
+    <header><span class="ttl">USD/BRL Curve</span><span class="sub" id="curveSub">forward · CIP</span></header>
     <div class="chartwrap" id="chartwrap">
       <svg id="chart" viewBox="0 0 780 248" preserveAspectRatio="none"></svg>
       <div class="ctip" id="ctip"></div>
@@ -175,6 +175,10 @@ const PAIRS=[
 ];
 const DXY_EXTRA=["USD-CAD","USD-SEK","USD-CHF"];
 const FEED=[...PAIRS.filter(p=>p.api).map(p=>p.api), ...DXY_EXTRA].join(",");
+// Cupom cambial limpo, calibrado pela curva Bloomberg em 30/06/2026.
+// O pré (perna BRL) atualiza sozinho todo dia; recalibrar o cupom periodicamente vs terminal.
+const CUPOM_CAL={"DOLN26":5.695,"DOLQ26":5.695,"DOLU26":5.051,"DOLV26":4.981,"DOLX26":5.08,"DOLZ26":4.983,"DOLF27":4.847,"DOLG27":4.9,"DOLH27":4.829,"DOLJ27":4.853,"DOLK27":4.831,"DOLM27":4.882};
+const CUPOM_CAL_DATE="30 Jun 26";
 let DATA={}, FX={}, SPOT=null, fxBuilt=false, tableBuilt=false, CHART=null;
 
 const nf=(x,d=4)=>x==null||isNaN(x)?"—":Number(x).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -251,7 +255,7 @@ function computeCurve(){
   if(!vs||!pre||pre.b1==null||SPOT==null) return null;
   return vs.map(v=>{
     const tau=v.du/252, pr=svensson(tau,pre);
-    const cv=cup[v.code]!=null?cup[v.code]:null, cp=(cv||0)/100;
+    const cv=CUPOM_CAL[v.code]!=null?CUPOM_CAL[v.code]:(cup[v.code]!=null?cup[v.code]:null), cp=(cv||0)/100;
     const dol=SPOT*Math.pow(1+pr,tau)/(1+cp*v.dc/360);
     return {...v,pre:pr*100,cup:cv,dol,pts:dol*1000};
   });
@@ -378,6 +382,7 @@ function update(){
   if(rows){ updateTable(rows); renderChart(rows); }
   renderCarry(); renderFocus();
   $("dataDate").textContent=DATA.refdate||"—";
+  $("curveSub").textContent="forward · CIP · cupom cal. "+CUPOM_CAL_DATE;
 }
 
 /* ---------- data ---------- */
@@ -388,7 +393,7 @@ async function loadData(){
     DATA=await r.json();
     if(DATA.fx&&!Object.keys(FX).length){
       for(const k in DATA.fx) FX[k]={bid:DATA.fx[k].bid,ask:DATA.fx[k].ask,pct:DATA.fx[k].pct};
-      if(FX.USDBRL) SPOT=FX.USDBRL.bid;
+      if(FX.USDBRL) SPOT=(FX.USDBRL.bid+(FX.USDBRL.ask||FX.USDBRL.bid))/2;
     }
     update();
   }catch(e){}
@@ -400,7 +405,7 @@ async function fetchFX(){
     for(const k in d){ const v=d[k];
       FX[k]={bid:parseFloat(v.bid),ask:parseFloat(v.ask||v.bid),high:parseFloat(v.high),
              low:parseFloat(v.low),pct:parseFloat(v.pctChange||0)}; }
-    if(FX.USDBRL) SPOT=FX.USDBRL.bid;
+    if(FX.USDBRL) SPOT=(FX.USDBRL.bid+(FX.USDBRL.ask||FX.USDBRL.bid))/2;
     update();
   }catch(e){}
 }
