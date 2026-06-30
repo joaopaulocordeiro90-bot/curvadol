@@ -41,6 +41,10 @@ body{background:
 .meta b{color:var(--ink);font-weight:500}
 .live::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;
   background:var(--up);margin-right:7px;vertical-align:middle;animation:pulse 1.8s ease-in-out infinite}
+.live.stale::before{background:var(--down);animation:none;box-shadow:0 0 6px var(--down)}
+#feed{color:var(--down);font-weight:600;letter-spacing:.08em;margin-left:9px}
+.fxtile.stale{opacity:.5}
+.fxtile.stale .px{color:var(--dim)}
 
 .fxstrip{display:flex;gap:0;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:none}
 .fxstrip::-webkit-scrollbar{display:none}
@@ -122,7 +126,7 @@ table.dol td.pre{color:var(--pre)} table.dol td.cup{color:var(--cup)}
 
 <div class="topbar">
   <div class="brand">BRL <b>DESK</b> <span>fx · rates · curve</span></div>
-  <div class="meta">as of <b id="dataDate">—</b> · <span class="live"></span><b id="clock">—</b></div>
+  <div class="meta">as of <b id="dataDate">—</b> · <span class="live" id="liveDot"></span><b id="clock">—</b><b id="feed"></b></div>
 </div>
 
 <div class="fxstrip" id="fxstrip"></div>
@@ -179,7 +183,14 @@ const FEED=[...PAIRS.filter(p=>p.api).map(p=>p.api), ...DXY_EXTRA].join(",");
 // O pré (perna BRL) atualiza sozinho todo dia; recalibrar o cupom periodicamente vs terminal.
 const CUPOM_CAL={"DOLN26":5.695,"DOLQ26":5.695,"DOLU26":5.051,"DOLV26":4.981,"DOLX26":5.08,"DOLZ26":4.983,"DOLF27":4.847,"DOLG27":4.9,"DOLH27":4.829,"DOLJ27":4.853,"DOLK27":4.831,"DOLM27":4.882};
 const CUPOM_CAL_DATE="30 Jun 26";
+// Offset de spot: AwesomeAPI roda ~0,28% rica vs BBG REGN. mid_Awe × SPOT_ADJ ≈ mid REGN.
+// Calib 30 Jun 26: Awe mid 5.1943 -> REGN mid 5.1799. Recalibrar junto com o cupom.
+// (Pra ancorar no comercial 5.1820 em vez de REGN: SPOT_ADJ=0.99763.)
+const SPOT_ADJ=0.99723;
+const SPOT_ADJ_DATE="30 Jun 26";
+const FX_STALE_MS=20000;   // sem fetch de FX ok ha >20s -> spot STALE (mata o feed congelado)
 let DATA={}, FX={}, SPOT=null, fxBuilt=false, tableBuilt=false, CHART=null;
+let fxLastOk=0, fxStale=true;   // comeca stale ate o 1o tick ao vivo
 
 const nf=(x,d=4)=>x==null||isNaN(x)?"—":Number(x).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
 const pf=(x,d=2)=>x==null||isNaN(x)?"—":(x>=0?"+":"")+Number(x).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d})+"%";
@@ -228,17 +239,22 @@ function updateFX(){
     const tile=$("fxstrip").querySelector(`.fxtile[data-k="${p.k}"]`); if(!tile) return;
     if(!q){ tile.style.display="none"; return; }
     tile.style.display="";
+    const isSpot=(p.k==="USDBRL");
     const dec=p.k==="DXY"?3:decFor(q.bid);
+    // USD/BRL: headline = mid ajustado p/ REGN (bate na BBG/curva). Demais: bid cru.
+    const head=isSpot ? (q.bid+(q.ask||q.bid))/2*SPOT_ADJ : q.bid;
     const px=tile.querySelector(".px"), chg=tile.querySelector(".chg"), prev=tile._bid;
-    px.textContent=nf(q.bid,dec);
-    chg.textContent=`${arrow(q.pct)} ${pf(q.pct)}`; chg.className="chg "+cls(q.pct);
-    if(prev!=null && q.bid!==prev) flash(tile, q.bid-prev);
-    tile._bid=q.bid;
+    px.textContent=nf(head,dec);
+    if(isSpot && fxStale){ chg.textContent="STALE"; chg.className="chg down"; }
+    else { chg.textContent=`${arrow(q.pct)} ${pf(q.pct)}`; chg.className="chg "+cls(q.pct); }
+    if(prev!=null && head!==prev && !(isSpot&&fxStale)) flash(tile, head-prev);
+    tile._bid=head;
     const rows=[];
     if(q.ask!=null){ rows.push(["bid",nf(q.bid,dec)],["ask",nf(q.ask,dec)]); }
     if(q.high!=null) rows.push(["high",nf(q.high,dec)]);
     if(q.low!=null)  rows.push(["low",nf(q.low,dec)]);
     rows.push(["chg",pf(q.pct)]);
+    if(isSpot){ rows.push(["adj","×"+SPOT_ADJ.toFixed(5)],["mid·adj",nf(head,4)]); }
     tile.querySelector(".tip").innerHTML=rows.map(([k,v])=>`<div><span>${k}</span><b>${v}</b></div>`).join("");
   });
 }
@@ -382,7 +398,8 @@ function update(){
   if(rows){ updateTable(rows); renderChart(rows); }
   renderCarry(); renderFocus();
   $("dataDate").textContent=DATA.refdate||"—";
-  $("curveSub").textContent="forward · CIP · cupom cal. "+CUPOM_CAL_DATE;
+  $("curveSub").textContent="forward · CIP · cupom "+CUPOM_CAL_DATE+" · spot adj REGN "+SPOT_ADJ_DATE+(fxStale?" · SPOT STALE":"");
+  checkStale();
 }
 
 /* ---------- data ---------- */
@@ -393,21 +410,47 @@ async function loadData(){
     DATA=await r.json();
     if(DATA.fx&&!Object.keys(FX).length){
       for(const k in DATA.fx) FX[k]={bid:DATA.fx[k].bid,ask:DATA.fx[k].ask,pct:DATA.fx[k].pct};
-      if(FX.USDBRL) SPOT=(FX.USDBRL.bid+(FX.USDBRL.ask||FX.USDBRL.bid))/2;
+      if(FX.USDBRL) SPOT=(FX.USDBRL.bid+(FX.USDBRL.ask||FX.USDBRL.bid))/2*SPOT_ADJ;
+      // NAO marca fresh: seed do curve.json e fechamento anterior -> segue STALE ate fetchFX ao vivo
     }
     update();
   }catch(e){}
 }
+async function pullFX(pairs){
+  const r=await fetch(`https://economia.awesomeapi.com.br/json/last/${pairs}`,{cache:"no-store"});
+  if(!r.ok) throw new Error("http "+r.status);
+  return r.json();
+}
+function storeQuote(k,v){
+  FX[k]={bid:parseFloat(v.bid),ask:parseFloat(v.ask||v.bid),high:parseFloat(v.high),
+         low:parseFloat(v.low),pct:parseFloat(v.pctChange||0)};
+}
 async function fetchFX(){
+  // 1) SPOT isolado: o USD/BRL nunca pode depender de um par EM que saiu do ar
+  let spotOk=false;
   try{
-    const r=await fetch(`https://economia.awesomeapi.com.br/json/last/${FEED}`,{cache:"no-store"});
-    const d=await r.json();
-    for(const k in d){ const v=d[k];
-      FX[k]={bid:parseFloat(v.bid),ask:parseFloat(v.ask||v.bid),high:parseFloat(v.high),
-             low:parseFloat(v.low),pct:parseFloat(v.pctChange||0)}; }
-    if(FX.USDBRL) SPOT=(FX.USDBRL.bid+(FX.USDBRL.ask||FX.USDBRL.bid))/2;
-    update();
+    const d=await pullFX("USD-BRL");
+    if(d&&d.USDBRL&&d.USDBRL.bid){ storeQuote("USDBRL",d.USDBRL);
+      SPOT=(FX.USDBRL.bid+FX.USDBRL.ask)/2*SPOT_ADJ; spotOk=true; }
   }catch(e){}
+  // 2) resto: par faltando degrada so aquele tile, nao derruba o spot nem os outros
+  try{
+    const d=await pullFX("EUR-BRL,GBP-BRL,EUR-USD,GBP-USD,USD-JPY,USD-MXN,USD-CLP,USD-ZAR,USD-CNY,USD-CAD,USD-SEK,USD-CHF");
+    if(d) for(const k in d) if(k!=="USDBRL"&&d[k]&&d[k].bid) storeQuote(k,d[k]);
+  }catch(e){}
+  if(spotOk){ fxLastOk=Date.now(); fxStale=false; }
+  checkStale();
+  update();
+}
+// Guard de staleness: sem fetch de spot ok ha >FX_STALE_MS, o spot para de se passar por ao vivo.
+function checkStale(){
+  fxStale=(Date.now()-fxLastOk)>FX_STALE_MS;
+  const dot=$("liveDot"), feed=$("feed");
+  if(dot) dot.classList.toggle("stale",fxStale);
+  if(feed) feed.textContent=fxStale?"SPOT STALE":"";
+  const strip=$("fxstrip");
+  const tile=strip&&strip.querySelector('.fxtile[data-k="USDBRL"]');
+  if(tile) tile.classList.toggle("stale",fxStale);
 }
 // Focus puxado do navegador (IP residencial brasileiro não é bloqueado como o robô)
 async function fetchFocus(){
@@ -430,6 +473,7 @@ function tick(){ $("clock").textContent=new Date().toLocaleTimeString("en-GB"); 
 $("chartwrap").addEventListener("mousemove",chartHover);
 $("chartwrap").addEventListener("mouseleave",chartLeave);
 tick(); setInterval(tick,1000);
+setInterval(checkStale,1000);   // watchdog: vira STALE mesmo se o fetchFX parar de ser chamado
 loadData().then(fetchFocus);
 fetchFX();
 setInterval(fetchFX,5000);      // feed ao vivo: 5s
