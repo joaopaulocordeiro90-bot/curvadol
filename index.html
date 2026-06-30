@@ -190,7 +190,7 @@ const FEED=[...PAIRS.filter(p=>p.api).map(p=>p.api), ...DXY_EXTRA].join(",");
 // O pré (perna BRL) atualiza sozinho todo dia; recalibrar o cupom periodicamente vs terminal.
 const CUPOM_CAL={"DOLN26":5.695,"DOLQ26":5.695,"DOLU26":5.051,"DOLV26":4.981,"DOLX26":5.08,"DOLZ26":4.983,"DOLF27":4.847,"DOLG27":4.9,"DOLH27":4.829,"DOLJ27":4.853,"DOLK27":4.831,"DOLM27":4.882};
 const CUPOM_CAL_DATE="30 Jun 26";
-const BUILD="b4 · 30Jun";   // selo de versao: confirma na tela qual build esta no ar
+const BUILD="b5 · 30Jun";   // selo de versao: confirma na tela qual build esta no ar
 // Offset de spot: AwesomeAPI roda ~0,28% rica vs BBG REGN. mid_Awe × SPOT_ADJ ≈ mid REGN.
 // Calib 30 Jun 26: Awe mid 5.1943 -> REGN mid 5.1799. Recalibrar junto com o cupom.
 // (Pra ancorar no comercial 5.1820 em vez de REGN: SPOT_ADJ=0.99763.)
@@ -274,13 +274,20 @@ function svensson(tau,p){
   const t3=(1-e(-l2*tau))/(l2*tau)-e(-l2*tau);
   return p.b1+p.b2*t1+p.b3*t2+p.b4*t3;
 }
+let curveFallback=false;   // true quando a curva esta sendo desenhada sobre PTAX (spot ao vivo morto)
 function computeCurve(){
   const vs=DATA.vencimentos,pre=DATA.pre,cup=(DATA.cupom&&DATA.cupom.byCode)||{};
-  if(!vs||!pre||pre.b1==null||SPOT==null) return null;
+  // spot ao vivo (ja vem com SPOT_ADJ). Se morto, ultimo recurso = PTAX cru (fix BCB, ~spot).
+  let base=SPOT; curveFallback=false;
+  if(base==null){
+    const p=DATA.rates&&DATA.rates.ptax&&DATA.rates.ptax.valor;
+    if(p!=null){ base=Number(p); curveFallback=true; }
+  }
+  if(!vs||!pre||pre.b1==null||base==null) return null;
   return vs.map(v=>{
     const tau=v.du/252, pr=svensson(tau,pre);
     const cv=CUPOM_CAL[v.code]!=null?CUPOM_CAL[v.code]:(cup[v.code]!=null?cup[v.code]:null), cp=(cv||0)/100;
-    const dol=SPOT*Math.pow(1+pr,tau)/(1+cp*v.dc/360);
+    const dol=base*Math.pow(1+pr,tau)/(1+cp*v.dc/360);
     return {...v,pre:pr*100,cup:cv,dol,pts:dol*1000};
   });
 }
@@ -405,7 +412,7 @@ function update(){
   const rows=computeCurve();
   if(rows){ updateTable(rows); renderChart(rows); }
   renderCarry(); renderFocus();
-  $("curveSub").textContent="forward · CIP · cupom "+CUPOM_CAL_DATE+" · spot adj REGN "+SPOT_ADJ_DATE+" · "+BUILD+(fxStale?" · SPOT STALE":"");
+  $("curveSub").textContent="forward · CIP · cupom "+CUPOM_CAL_DATE+" · spot adj REGN "+SPOT_ADJ_DATE+" · "+BUILD+(fxStale?" · SPOT STALE":"")+(curveFallback?" · curve on PTAX":"");
   checkStale();
 }
 
@@ -433,22 +440,32 @@ function storeQuote(k,v){
          low:parseFloat(v.low),pct:parseFloat(v.pctChange||0)};
 }
 // SPOT isolado (roda a 1s): o USD/BRL nunca depende de um par EM que saiu do ar
+// SPOT a ~5s com backoff: em falha (rate-limit/outage) dobra o intervalo ate 60s,
+// pra nao martelar a API bloqueada e deixar o bloqueio expirar. Volta a 5s ao primeiro sucesso.
+let spotDelay=5000; const SPOT_BASE=5000, SPOT_MAX=60000;
 async function fetchSpot(){
+  let ok=false;
   try{
     const d=await pullFX("USD-BRL");
     if(d&&d.USDBRL&&d.USDBRL.bid){ storeQuote("USDBRL",d.USDBRL);
       SPOT=(FX.USDBRL.bid+FX.USDBRL.ask)/2*SPOT_ADJ;
-      fxLastOk=Date.now(); fxStale=false; beat(); }
+      fxLastOk=Date.now(); fxStale=false; beat(); ok=true; }
   }catch(e){}
+  spotDelay = ok ? SPOT_BASE : Math.min(spotDelay*2, SPOT_MAX);
   checkStale();
   update();
+  setTimeout(fetchSpot, spotDelay);
 }
-// Resto dos pares (roda a 5s): par faltando degrada so aquele tile, nao derruba os outros
+// Resto dos pares a ~20s (mexem pouco): par faltando degrada so aquele tile, com backoff leve.
+let restDelay=20000; const REST_BASE=20000, REST_MAX=120000;
 async function fetchRest(){
+  let ok=false;
   try{
     const d=await pullFX("EUR-BRL,GBP-BRL,EUR-USD,GBP-USD,USD-JPY,USD-MXN,USD-CLP,USD-ZAR,USD-CNY,USD-CAD,USD-SEK,USD-CHF");
-    if(d){ for(const k in d) if(k!=="USDBRL"&&d[k]&&d[k].bid) storeQuote(k,d[k]); update(); }
+    if(d){ for(const k in d) if(k!=="USDBRL"&&d[k]&&d[k].bid) storeQuote(k,d[k]); update(); ok=true; }
   }catch(e){}
+  restDelay = ok ? REST_BASE : Math.min(restDelay*2, REST_MAX);
+  setTimeout(fetchRest, restDelay);
 }
 // Heartbeat: pisca o dot a cada pull de spot ok (sinal de vida real, independente de preco mexer)
 function beat(){ const d=$("liveDot"); if(!d) return;
@@ -499,9 +516,8 @@ $("chartwrap").addEventListener("mouseleave",chartLeave);
 tick(); setInterval(tick,1000);
 setInterval(checkStale,1000);   // watchdog: vira STALE mesmo se o fetch parar de ser chamado
 loadData().then(fetchFocus);
-fetchSpot(); fetchRest();
-setInterval(fetchSpot,1000);    // spot: 1s
-setInterval(fetchRest,5000);    // crosses/majors/EM: 5s
+fetchSpot();    // spot: ~5s, com backoff ate 60s em falha (auto-reagenda)
+fetchRest();    // crosses: ~20s, com backoff (auto-reagenda)
 setInterval(syntheticPulse,5000); // pisca sintetico de "atualizando" (so quando vivo)
 setInterval(loadData,3600000);
 setInterval(fetchFocus,3600000);
