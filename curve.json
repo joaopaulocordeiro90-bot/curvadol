@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-06-30T11:42:34.668719Z",
+  "updatedAt": "2026-06-30T12:02:15.198151Z",
   "refdate": "29/06/2026",
   "vencimentos": [
     {
@@ -77,7 +77,7 @@
   ],
   "fx": {
     "status": "fail",
-    "erro": "429 Client Error: Too Many Requests for url: https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL,GBP-BRL,USD-MXN,USD-CLP,USD-ZAR,USD-CNY,USD-JPY"
+    "erro": "429 Client Error: Too Many Requests for url: https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL,GBP-BRL,EUR-USD,GBP-USD,USD-JPY,USD-MXN,USD-CLP,USD-ZAR,USD-CNY,USD-CAD,USD-SEK,USD-CHF"
   },
   "rates": {
     "selic": {
@@ -101,19 +101,19 @@
     }
   },
   "focus": {
-    "selic": {
-      "erro": "400 Client Error: Bad Request for url: https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/ExpectativasMercadoAnuais?%24top=1&%24format=json&%24orderby=Data+desc&%24filter=Indicador+eq+%27Selic%27+and+DataReferencia+eq+%272026%27"
-    },
+    "ano": 2026,
     "ipca": {
-      "erro": "400 Client Error: Bad Request for url: https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/ExpectativasMercadoAnuais?%24top=1&%24format=json&%24orderby=Data+desc&%24filter=Indicador+eq+%27IPCA%27+and+DataReferencia+eq+%272026%27"
+      "erro": "400 Client Error: Bad Request for url: https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/ExpectativasMercadoAnuais?%24top=1&%24format=json&%24orderby=Data+desc&%24select=Indicador%2CData%2CDataReferencia%2CMediana&%24filter=Indicador+eq+%27IPCA%27+and+DataReferencia+eq+%272026%27"
+    },
+    "selic": {
+      "erro": "400 Client Error: Bad Request for url: https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/ExpectativasMercadoAnuais?%24top=1&%24format=json&%24orderby=Data+desc&%24select=Indicador%2CData%2CDataReferencia%2CMediana&%24filter=Indicador+eq+%27Selic%27+and+DataReferencia+eq+%272026%27"
     },
     "cambio": {
-      "erro": "400 Client Error: Bad Request for url: https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/ExpectativasMercadoAnuais?%24top=1&%24format=json&%24orderby=Data+desc&%24filter=Indicador+eq+%27C%C3%A2mbio%27+and+DataReferencia+eq+%272026%27"
+      "erro": "400 Client Error: Bad Request for url: https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/ExpectativasMercadoAnuais?%24top=1&%24format=json&%24orderby=Data+desc&%24select=Indicador%2CData%2CDataReferencia%2CMediana&%24filter=Indicador+eq+%27C%C3%A2mbio%27+and+DataReferencia+eq+%272026%27"
     },
     "pib": {
-      "erro": "400 Client Error: Bad Request for url: https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/ExpectativasMercadoAnuais?%24top=1&%24format=json&%24orderby=Data+desc&%24filter=Indicador+eq+%27PIB+Total%27+and+DataReferencia+eq+%272026%27"
-    },
-    "ano": 2026
+      "erro": "400 Client Error: Bad Request for url: https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/ExpectativasMercadoAnuais?%24top=1&%24format=json&%24orderby=Data+desc&%24select=Indicador%2CData%2CDataReferencia%2CMediana&%24filter=Indicador+eq+%27PIB+Total%27+and+DataReferencia+eq+%272026%27"
+    }
   },
   "pre": {
     "b1": 0.1414,
